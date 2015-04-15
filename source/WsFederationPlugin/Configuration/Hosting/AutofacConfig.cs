@@ -24,6 +24,7 @@ using Thinktecture.IdentityServer.Core.Services;
 using Thinktecture.IdentityServer.WsFederation.Configuration.Hosting;
 using Thinktecture.IdentityServer.WsFederation.Hosting;
 using Thinktecture.IdentityServer.WsFederation.ResponseHandling;
+using Thinktecture.IdentityServer.WsFederation.Services;
 using Thinktecture.IdentityServer.WsFederation.Validation;
 
 namespace Thinktecture.IdentityServer.WsFederation.Configuration
@@ -44,6 +45,9 @@ namespace Thinktecture.IdentityServer.WsFederation.Configuration
             // mandatory from factory
             builder.Register(factory.UserService);
             builder.Register(factory.RelyingPartyService);
+
+            // optional from factory
+            builder.RegisterDefaultType<ICustomWsFederationRequestValidator, DefaultCustomWsFederationRequestValidator>(factory.CustomRequestValidator);
 
             // validators
             builder.RegisterType<SignInValidator>().AsSelf();
@@ -120,6 +124,27 @@ namespace Thinktecture.IdentityServer.WsFederation.Configuration
                 var message = "No type or factory found on registration " + registration.GetType().FullName;
                 Logger.Error(message);
                 throw new InvalidOperationException(message);
+            }
+        }
+
+        private static void RegisterDefaultType<T, TDefault>(this ContainerBuilder builder, Registration<T> registration, string name = null)
+            where T : class
+            where TDefault : T
+        {
+            if (registration != null)
+            {
+                builder.Register(registration, name);
+            }
+            else
+            {
+                if (name == null)
+                {
+                    builder.RegisterType<TDefault>().As<T>();
+                }
+                else
+                {
+                    builder.RegisterType<TDefault>().Named<T>(name);
+                }
             }
         }
     }
